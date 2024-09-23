@@ -83,12 +83,17 @@ class Envman:
     
   
   def step(self, action):
-    next_move=self.actions[self.__move_state__(self.current_state, action)]
-    new_state = [self.current_state[0]+next_move[0], self.current_state[1]+next_move[1]]
-    if (new_state[0] >=0) and (new_state[0]< self.n) and (new_state[1] >=0) and (new_state[1]< self.n):
-      self.current_state = new_state
-    else:
-      print("error")
+    try:
+      next_move=self.actions[self.__move_state__(self.current_state, action)]
+      new_state = [self.current_state[0]+next_move[0], self.current_state[1]+next_move[1]]
+      if (new_state[0] >=0) and (new_state[0]< self.n) and (new_state[1] >=0) and (new_state[1]< self.n):
+        self.current_state = new_state
+        return new_state, self.check_end_or_not(new_state)
+      else:
+        return self.current_state, self.check_end_or_not(new_state)
+    except:
+      return self.current_state, self.check_end_or_not(self.current_state)
+    
 
   
   def __move_state__(self, state, action):
@@ -110,6 +115,7 @@ class Envman:
         break 
       else:
         pass
+      
     return next_state
     
     
@@ -185,6 +191,21 @@ def policy_setting(state, n):
   return receiver
 
 
+
+
+# up, down, left, right
+
+def action_string(value):
+  if value == 0:
+    return "up"
+  elif value == 1:
+    return "down"
+  elif value == 2:
+    return "left"
+  else:
+    return "right"
+
+
 if __name__ == "__main__":
   board = np.zeros((7,7))
   board = hole(board)
@@ -193,19 +214,22 @@ if __name__ == "__main__":
   check_curr = None 
   keep =True 
   total_episode = defaultdict(list)
+  
   for episode in range(0, 30):
     envagent.initialization()
     keep = True
     while keep:
       curr = envagent.get_current_state()
-      reward=envagent.check_end_or_not(curr)
-      if (reward == -40) or (reward == 20):
-        total_episode[episode].append([curr ,None,reward  ])
-        keep =False
+      action= policy_setting(curr, 7)
+      new_state, reward = envagent.step(action)
+      if reward == -1 :
+        total_episode[episode].append([curr, action, reward, action_string(action) ])
       else:
-        action = policy_setting(curr,  envagent.n )
-        total_episode[episode].append([curr ,action ,reward  ])
-        envagent.step(action)
+        total_episode[episode].append([curr, action, reward, action_string(action) ])
+        total_episode[episode].append([new_state, None, None, None ])
+        keep = False
+      
+      
 
   for key in total_episode.keys():
     print("key->", key)
