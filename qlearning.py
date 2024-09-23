@@ -42,7 +42,8 @@ class Envman:
     #q_value
     self.action_state_value = np.zeros((4 , self.n))
     
-    
+  
+ 
   
   def find_hole(self):
     tmp = []
@@ -54,8 +55,8 @@ class Envman:
   
   
   def initialization(self):
-     self.current_state  = random.choice(self.total_state)
-     
+    self.current_state  = random.choice(self.total_state)
+
 
   def availibility(self,  current ):
     possible = [] 
@@ -66,31 +67,50 @@ class Envman:
         possible.append(idx)  
     possible.sort()    
     return possible
-      
-  def step(self):
-    pass
+  
     
-  # def move_state(self, state, action):
-  #   move_probability=self.probability[action,state , :]
-  #   cumulative_sum = np.cumsum(move_probability)
-  #   cumulative_sum = np.ceil(cumulative_sum*1000).astype(int)
-  #   total_range = [] 
-  #   next_state = None 
-  #   for ii in range(0, self.n):
-  #     if ii == 0 :
-  #       total_range.append([0,  cumulative_sum[0].item()])
-  #     else:
-  #       total_range.append([ cumulative_sum[ii-1].item(),cumulative_sum[ii].item() ])
+  def get_current_state(self):
+    return self.current_state      
+
+  
+  def check_end_or_not(self, state):
+    if self.board[state[0], state[1]] < 0 :
+      return -40
+    elif (state[0] == 6) and (state[1] == 0):
+      return 20 
+    else: 
+      return -1
     
   
-  #   pick=np.random.choice(range(1001), size=1 , replace=False)
-  #   for idx , jj in enumerate(total_range):
-  #     if (pick > jj[0]) and (pick <= jj[1]):
-  #       next_state = idx 
-  #       break 
-  #     else:
-  #       pass
-  #   return next_state
+  def step(self, action):
+    next_move=self.actions[self.__move_state__(self.current_state, action)]
+    new_state = [self.current_state[0]+next_move[0], self.current_state[1]+next_move[1]]
+    if (new_state[0] >=0) and (new_state[0]< self.n) and (new_state[1] >=0) and (new_state[1]< self.n):
+      self.current_state = new_state
+    else:
+      print("error")
+
+  
+  def __move_state__(self, state, action):
+    move_probability=self.probability[state[0], state[1] , action, :]
+    cumulative_sum = np.cumsum(move_probability)
+    cumulative_sum = np.ceil(cumulative_sum*1000).astype(int)
+    total_range = [] 
+    next_state = None 
+    for ii in range(0, 4):
+      if ii == 0 :
+        total_range.append([0,  cumulative_sum[0].item()])
+      else:
+        total_range.append([ cumulative_sum[ii-1].item(),cumulative_sum[ii].item() ])
+    
+    pick=np.random.choice(range(1001), size=1 , replace=False)
+    for idx , jj in enumerate(total_range):
+      if (pick > jj[0]) and (pick <= jj[1]):
+        next_state = idx 
+        break 
+      else:
+        pass
+    return next_state
     
     
   def select_state_action_value(self, state, action ):
@@ -100,7 +120,7 @@ class Envman:
     self.action_state_value[action, state] =  (1-self.lambdavalue)*self.action_state_value[action, state] + self.lambdavalue*value
     
   def generate_mdpfunction(self, tmp):
-    self.beta = 0.37
+    self.beta = 0.4
     for i in range(0,self.n):
       for j in range(0,self.n):
         for k in range(0, 4):
@@ -146,7 +166,48 @@ def hole(board):
   
   return board
 
+
+
+def policy_setting(state, n):
+  dice = [0,1,2,3]
+  actions = [[-1,0], [1,0], [0,-1], [0,1]]
+  validation = True
+  receiver = None  
+  while validation:
+    next_add = random.choice(dice)
+    next_state = [state[0]+ actions[next_add][0], state[1]+ actions[next_add][1]] 
+    if ( next_state[0] >=0 ) and ( next_state[0] < n ) and( next_state[1] >=0 ) and (next_state[1] < n ):
+      receiver = next_add
+      validation = False
+    else:
+      continue
+    
+  return receiver
+
+
 if __name__ == "__main__":
   board = np.zeros((7,7))
   board = hole(board)
   envagent=Envman(7, 40, board)
+  total_path = [] 
+  check_curr = None 
+  keep =True 
+  total_episode = defaultdict(list)
+  for episode in range(0, 30):
+    envagent.initialization()
+    keep = True
+    while keep:
+      curr = envagent.get_current_state()
+      reward=envagent.check_end_or_not(curr)
+      if (reward == -40) or (reward == 20):
+        total_episode[episode].append([curr ,None,reward  ])
+        keep =False
+      else:
+        action = policy_setting(curr,  envagent.n )
+        total_episode[episode].append([curr ,action ,reward  ])
+        envagent.step(action)
+
+  for key in total_episode.keys():
+    print("key->", key)
+    print(total_episode[key])
+    print("---------------------------")
