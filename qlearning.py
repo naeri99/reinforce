@@ -83,17 +83,16 @@ class Envman:
     
   
   def step(self, action):
-    try:
-      next_move=self.actions[self.__move_state__(self.current_state, action)]
-      new_state = [self.current_state[0]+next_move[0], self.current_state[1]+next_move[1]]
-      if (new_state[0] >=0) and (new_state[0]< self.n) and (new_state[1] >=0) and (new_state[1]< self.n):
-        self.current_state = new_state
-        return new_state, self.check_end_or_not(new_state)
-      else:
-        return self.current_state, self.check_end_or_not(new_state)
-    except:
-      return self.current_state, self.check_end_or_not(self.current_state)
-    
+    next_move=self.actions[self.__move_state__(self.current_state, action)]
+    new_state = [self.current_state[0]+next_move[0], self.current_state[1]+next_move[1]]
+    if (new_state[0] >=0) and (new_state[0]< self.n) and (new_state[1] >=0) and (new_state[1]< self.n):
+      self.current_state = new_state
+      return new_state, self.check_end_or_not(new_state)
+    else:
+      return self.current_state, self.check_end_or_not(new_state)
+   
+
+  
 
   
   def __move_state__(self, state, action):
@@ -107,15 +106,20 @@ class Envman:
         total_range.append([0,  cumulative_sum[0].item()])
       else:
         total_range.append([ cumulative_sum[ii-1].item(),cumulative_sum[ii].item() ])
+    final_generation = True
     
-    pick=np.random.choice(range(1001), size=1 , replace=False)
-    for idx , jj in enumerate(total_range):
-      if (pick > jj[0]) and (pick <= jj[1]):
-        next_state = idx 
-        break 
+    while final_generation:
+      pick=np.random.choice(range(1001), size=1 , replace=False)
+      for idx , jj in enumerate(total_range):
+        if (pick > jj[0]) and (pick <= jj[1]):
+          next_state = idx 
+          break 
+        else:
+          pass
+      if next_state == None :
+        final_generation = True
       else:
-        pass
-      
+        final_generation = False
     return next_state
     
     
