@@ -1,0 +1,10 @@
+processor = ScriptProcessor(
+    base_job_name="pdf-qa-generator",
+    image_uri=custom_image_uri,
+    command=["python3"],   # 실행 명령만 포함
+    instance_type="ml.c7i.4xlarge", #"ml.g5.4xlarge" 이벤트실습계정에는 processing job의 gpu 쿼터가 없음
+    instance_count=1,
+    role=role,
+    sagemaker_session=sagemaker_session,
+    max_runtime_in_seconds=7200
+)
